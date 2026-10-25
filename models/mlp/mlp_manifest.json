@@ -1,0 +1,1 @@
+{"classes": ["Butterfly", "Cat", "Chicken", "Cow", "Dog", "Elephant", "Horse", "Sheep", "Spider", "Squirrel"], "input_size": 64, "layers": [{"in": 12288, "out": 128, "activation": "relu"}, {"in": 128, "out": 64, "activation": "relu"}, {"in": 64, "out": 10, "activation": "softmax"}]}
