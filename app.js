@@ -26,6 +26,8 @@ const state = {
   stream: null, liveTimer: null, liveBusy: false,
 };
 
+const EMOJI = { Butterfly: '🦋', Cat: '🐱', Chicken: '🐔', Cow: '🐮', Dog: '🐶', Elephant: '🐘', Horse: '🐴', Sheep: '🐑', Spider: '🕷️', Squirrel: '🐿️' };
+const lab = i => `${EMOJI[state.classes[i]] || ''} ${state.classes[i]}`.trim();
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const fmtPct = p => (p * 100 < 10 ? (p * 100).toFixed(1) : Math.round(p * 100)) + '%';
@@ -83,7 +85,7 @@ async function loadMLP() {
   forward(new Float32Array(S * S * 3));   // warm-up
   const params = layers.reduce((s, L) => s + L.in * L.out + L.out, 0);
   return {
-    id: 'mlp', name: 'MLP', cls: 'mlp', classes: manifest.classes,
+    id: 'mlp', name: 'MLP', nick: 'the pixel counter', cls: 'mlp', classes: manifest.classes,
     info: `${(buf.byteLength / 1048576).toFixed(1)} MB · ${params.toLocaleString()} params`,
     predict: async canvas => forward(input(canvas)),
   };
@@ -98,7 +100,7 @@ async function loadTM(classes) {
   const entry = performance.getEntriesByType('resource').find(r => r.name.endsWith('models/tm/weights.bin'));
   const sizeMB = entry ? (entry.decodedBodySize || entry.encodedBodySize || 0) / 1048576 : 0;
   return {
-    id: 'tm', name: 'Teachable Machine', cls: 'tm', classes: labels,
+    id: 'tm', name: 'Teachable Machine', nick: 'the shape spotter', cls: 'tm', classes: labels,
     info: `${sizeMB ? sizeMB.toFixed(1) + ' MB · ' : ''}pre-trained CNN`,
     predict: async canvas => {
       const preds = await tm.predict(canvas);
@@ -126,7 +128,7 @@ function buildCards(container, prefix) {
   for (const m of state.models) {
     const el = document.createElement('article');
     el.className = `model ${m.cls}`;
-    el.innerHTML = `<header><h3>${m.name}</h3><span class="meta">${m.info}</span></header>
+    el.innerHTML = `<header><div><h3>${m.name}</h3><p class="nick">${m.nick || ''}</p></div><span class="meta">${m.info}</span></header>
       <div class="top1" id="${prefix}-top-${m.id}">–</div>
       <div class="bars" id="${prefix}-bars-${m.id}"></div>`;
     container.appendChild(el);
@@ -139,12 +141,12 @@ function renderCard(prefix, m, res, truth) {
   let badge = '';
   if (truth >= 0) badge = top === truth ? '<span class="badge ok">correct</span>' : '<span class="badge no">wrong</span>';
   $(`#${prefix}-top-${m.id}`).innerHTML =
-    `${state.classes[top]}<small>${fmtPct(p[top])}</small>${badge}`;
+    `${lab(top)}<small>${fmtPct(p[top])}</small>${badge}`;
   const bars = $(`#${prefix}-bars-${m.id}`);
   bars.style.setProperty('--c', `var(--${m.cls})`);
   bars.innerHTML = order.map((k, r) => `
     <div class="bar ${r === 0 ? 'top' : ''} ${k === truth ? 'truth' : ''}">
-      <span class="name">${state.classes[k]}</span>
+      <span class="name">${lab(k)}</span>
       <span class="track"><span class="fill" style="width:${(p[k] * 100).toFixed(1)}%"></span></span>
       <span class="pct">${fmtPct(p[k])}</span>
     </div>`).join('');
@@ -154,18 +156,18 @@ function renderCard(prefix, m, res, truth) {
 function renderVerdict(results, truth) {
   const tops = state.models.map(m => argmax(results[m.id].p));
   const v = $('#verdict');
-  const names = state.models.map((m, i) => `${m.name}: <b>${state.classes[tops[i]]}</b>`).join(' &nbsp;·&nbsp; ');
+  const names = state.models.map((m, i) => `${m.name}: <b>${lab(tops[i])}</b>`).join(' &nbsp;·&nbsp; ');
   const agree = tops.every(t => t === tops[0]);
   let extra = '';
-  if (truth >= 0) extra = ` &nbsp;·&nbsp; true class: <b>${state.classes[truth]}</b>`;
+  if (truth >= 0) extra = ` &nbsp;·&nbsp; it is a <b>${lab(truth)}</b>`;
   v.className = 'verdict ' + (agree ? 'agree' : 'differ');
-  v.innerHTML = (agree ? 'Both models agree. ' : 'The models disagree. ') + names + extra;
+  v.innerHTML = (agree ? 'They agree! ' : 'Plot twist, they disagree. ') + names + extra;
 }
 
 async function runTry() {
   if (!state.base || !state.models.length) return;
   const my = ++state.tokenTry;
-  $('#verdict').className = 'verdict'; $('#verdict').textContent = 'Analysing…';
+  $('#verdict').className = 'verdict'; $('#verdict').textContent = 'Thinking…';
   const res = await predictAll(state.base);
   if (my !== state.tokenTry) return;
   for (const m of state.models) renderCard('try', m, res[m.id], state.trueLabel);
@@ -202,8 +204,8 @@ function loadFile(file) {
   if (!file || !file.type.startsWith('image/')) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => { setInput(drawCover(img, img.naturalWidth, img.naturalHeight), `Your image: ${file.name || 'pasted image'}`); URL.revokeObjectURL(url); };
-  img.onerror = () => showBanner('That file could not be read as an image.');
+  img.onload = () => { setInput(drawCover(img, img.naturalWidth, img.naturalHeight), `Your photo: ${file.name || 'pasted image'}`); URL.revokeObjectURL(url); };
+  img.onerror = () => showBanner('That file could not be read as a photo.');
   img.src = url;
 }
 
@@ -211,7 +213,7 @@ function loadFromGallery(item) {
   const img = new Image();
   img.onload = () => {
     const c = mk(SIZE, SIZE); c.getContext('2d').drawImage(img, 0, 0, SIZE, SIZE);
-    setInput(c, `Test image · true class: ${state.classes[item.t]}`, item.t);
+    setInput(c, `Test photo · it is a ${state.classes[item.t]}`, item.t);
   };
   img.src = 'gallery/' + item.f;
 }
@@ -240,7 +242,7 @@ function initInput() {
       showBanner('Webcam unavailable: ' + (err.message || err) + ' (browsers only allow it on https:// pages or localhost).');
     }
   });
-  const snap = () => { if (video.videoWidth) setInput(drawCover(video, video.videoWidth, video.videoHeight), 'Webcam capture'); };
+  const snap = () => { if (video.videoWidth) setInput(drawCover(video, video.videoWidth, video.videoHeight), 'Webcam photo'); };
   $('#btnSnap').addEventListener('click', snap);
   const stopCam = () => {
     $('#live').checked = false; clearInterval(state.liveTimer);
@@ -328,12 +330,12 @@ async function computeHeat() {
       const probs = await m.predict(canvas);
       const target = sel === 'own' ? argmax(probs) : +sel;
       const card = document.createElement('div'); card.className = 'heat';
-      card.innerHTML = `<h3 style="color:var(--${m.cls})">${m.name}</h3><canvas width="${SIZE}" height="${SIZE}"></canvas><p></p>`;
+      card.innerHTML = `<h3 style="color:var(--${m.cls}-ink)">${m.name}</h3><canvas width="${SIZE}" height="${SIZE}"></canvas><p></p>`;
       grid.appendChild(card);
       const { map, mapP, base } = await occlusion(m, canvas, target, (i, n) => { $('#lookProgress').textContent = `${m.name}: ${i}/${n}`; });
       paintHeat($('canvas', card), canvas, map);
       let worst = 0; for (const v of mapP) if (v > worst) worst = v;
-      $('p', card).innerHTML = `Explaining “<b>${state.classes[target]}</b>” (confidence ${fmtPct(base)}). ` +
+      $('p', card).innerHTML = `Explaining “<b>${lab(target)}</b>” (confidence ${fmtPct(base)}). ` +
         (worst > 0.02 ? `Hiding the most important region lowers that confidence by ${(worst * 100).toFixed(1)} points.`
                       : 'Hiding any single region barely changes its answer: it is using many cues at once.');
     }
@@ -506,7 +508,7 @@ async function initExplorer() {
   { let seed = 12345; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     state.display = list.slice(); for (let i = state.display.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [state.display[i], state.display[j]] = [state.display[j], state.display[i]]; } }
   const sel = $('#classFilter');
-  state.classes.forEach((c, i) => sel.insertAdjacentHTML('beforeend', `<option value="${i}">${c}</option>`));
+  state.classes.forEach((c, i) => sel.insertAdjacentHTML('beforeend', `<option value="${i}">${lab(i)}</option>`));
   sel.addEventListener('change', () => { state.cls = +sel.value; state.page = 0; renderGallery(); });
   const seg = $('#catFilter');
   seg.innerHTML = CATS.map(c => `<button data-cat="${c.id}" class="${c.id === 'all' ? 'active' : ''}">${c.label} <span class="n"></span></button>`).join('');
@@ -521,6 +523,7 @@ async function initExplorer() {
   $('#galleryGrid').addEventListener('click', e => { const t = e.target.closest('.tile'); if (t) { loadFromGallery(state.view[+t.dataset.i]); activate('try'); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
   renderGallery();
   renderSamples();
+  renderCollage();
   const acc = k => list.filter(g => g[k] === g.t).length / list.length;
   $('#liveCheck').textContent = `Measured live in this browser on the exported test images: MLP ${(acc('m') * 100).toFixed(2)}%, Teachable Machine ${(acc('g') * 100).toFixed(2)}%. ` +
     'The headline numbers above come from the training notebooks; tiny differences are expected because images were resized and JPEG-compressed again for the web.';
@@ -536,18 +539,27 @@ function renderGallery(scroll) {
     const c = catOf(g);
     return `<button class="tile ${c.cls}" data-i="${state.page * PER_PAGE + i}" title="Open in Try it">
       <img loading="lazy" src="gallery/${g.f}" alt="${state.classes[g.t]}">
-      <div class="cap"><b>${state.classes[g.t]}</b><br>
-      MLP: <span class="${g.m === g.t ? 'ok' : 'no'}">${state.classes[g.m]}</span><br>
-      TM: <span class="${g.g === g.t ? 'ok' : 'no'}">${state.classes[g.g]}</span></div></button>`;
+      <div class="cap"><b>${lab(g.t)}</b><br>
+      MLP: <span class="${g.m === g.t ? 'ok' : 'no'}">${lab(g.m)}</span><br>
+      TM: <span class="${g.g === g.t ? 'ok' : 'no'}">${lab(g.g)}</span></div></button>`;
   }).join('') || '<p class="muted">No images match.</p>';
   $('#pgInfo').textContent = `Page ${state.page + 1} of ${pages} · ${state.view.length} images`;
   $('#pgPrev').disabled = state.page === 0; $('#pgNext').disabled = state.page >= pages - 1;
   if (scroll) $('#tab-explore').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function renderCollage() {
+  const wanted = ['Cat', 'Dog', 'Butterfly', 'Horse'];
+  const picks = wanted.map(n => state.gallery.find(g => g.t === state.classes.indexOf(n) && g.g === g.t && g.m !== g.t)).filter(Boolean);
+  $('#collage').innerHTML = picks.map((g, i) => `<button class="polaroid" data-i="${i}" aria-label="Open this ${state.classes[g.t]} photo">
+      <img src="gallery/${g.f}" alt="A ${state.classes[g.t].toLowerCase()}">
+      <span class="guess"><span class="no">MLP: ${lab(g.m)} ✗</span><span class="ok">TM: ${lab(g.g)} ✓</span></span></button>`).join('');
+  $('#collage').onclick = e => { const b = e.target.closest('.polaroid'); if (!b) return; loadFromGallery(picks[+b.dataset.i]); activate('try'); $('#tab-try').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+}
+
 function renderSamples() {
   const firsts = state.classes.map((_, i) => state.gallery.find(g => g.t === i)).filter(Boolean);
-  $('#samples').innerHTML = firsts.map((g, i) => `<button data-i="${i}" title="${state.classes[g.t]}"><img src="gallery/${g.f}" alt="${state.classes[g.t]}"></button>`).join('');
+  $('#samples').innerHTML = firsts.map((g, i) => `<button data-i="${i}" title="${state.classes[g.t]}"><img src="gallery/${g.f}" alt="${state.classes[g.t]}"><span class="em">${EMOJI[state.classes[g.t]] || ''}</span></button>`).join('');
   $('#samples').addEventListener('click', e => { const b = e.target.closest('button'); if (b) loadFromGallery(firsts[+b.dataset.i]); });
 }
 
@@ -556,11 +568,11 @@ function renderSamples() {
 function renderResults() {
   const rows = state.classes.map((c, i) => {
     const m = REPORT.perClassCorrect.mlp[i] / REPORT.perClassTotal, t = REPORT.perClassCorrect.tm[i] / REPORT.perClassTotal;
-    return `<div class="pc"><span>${c}</span><div class="pair">
+    return `<div class="pc"><span>${EMOJI[c] || ''} ${c}</span><div class="pair">
       <div class="row"><span class="track"><span class="fill mlp" style="width:${m * 100}%"></span></span><span>${(m * 100).toFixed(1)}%</span></div>
       <div class="row"><span class="track"><span class="fill tm" style="width:${t * 100}%"></span></span><span>${(t * 100).toFixed(1)}%</span></div></div></div>`;
   }).join('');
-  $('#perClass').innerHTML = rows + '<p class="fine"><span class="mlp-text">■</span> MLP &nbsp; <span class="tm-text">■</span> Teachable Machine</p>';
+  $('#perClass').innerHTML = rows + '<p class="fine"><b style="color:var(--mlp)">■</b> MLP &nbsp; <b style="color:var(--tm)">■</b> Teachable Machine</p>';
 }
 
 /* ------------------------------------------------------------------ tabs */
@@ -574,7 +586,11 @@ function activate(name) {
 }
 
 function initTabs() {
-  $$('.tab').forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+  $$('.tab').forEach(t => t.addEventListener('click', () => {
+    activate(t.dataset.tab);
+    const top = $('.hero').offsetHeight;                        // bring the section into view instead of leaving the hero on screen
+    if (window.scrollY < top) window.scrollTo({ top, behavior: 'smooth' });
+  }));
   $('#btnLook').addEventListener('click', computeHeat);
 }
 
@@ -595,7 +611,7 @@ async function boot() {
     setChip('#chip-tm', 'ok', `Teachable Machine ready · ${tm.info}`);
   } catch (e) { setChip('#chip-tm', 'err', 'Teachable Machine failed to load'); showBanner('Could not load Teachable Machine: ' + e.message); }
 
-  state.classes.forEach((c, i) => $('#lookClass').insertAdjacentHTML('beforeend', `<option value="${i}">${c}</option>`));
+  state.classes.forEach((c, i) => $('#lookClass').insertAdjacentHTML('beforeend', `<option value="${i}">${lab(i)}</option>`));
   buildCards($('#modelCols'), 'try'); buildCards($('#stressCols'), 'st');
   renderResults();
   await initExplorer();

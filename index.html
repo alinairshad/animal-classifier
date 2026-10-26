@@ -3,30 +3,50 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MLP vs Teachable Machine · Animal Classifier</title>
-  <meta name="description" content="The same 7,000 training images and the same 1,500 test images: a plain MLP (28%) against a Teachable Machine model (93%). Try it, stress it, and see where each model looks.">
+  <title>Cat or chicken? MLP vs Teachable Machine</title>
+  <meta name="description" content="I trained two models on the same 7,000 animal photos. One gets 28% right, the other 93%. Play with them, break them, and see where each one looks.">
+  <link rel="preload" href="fonts/fraunces-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="hero">
-    <div class="wrap">
-      <p class="eyebrow">Deep Learning project · 10 animal classes</p>
-      <h1>MLP <span class="vs">vs</span> Teachable Machine</h1>
-      <p class="lead">Same <b>7,000</b> training images. Same <b>1,500</b> unseen test images. Same epochs, batch size and learning rate.
-        One model reaches <b class="mlp-text">28%</b>, the other <b class="tm-text">93%</b>. Everything below runs <b>in your browser</b>: nothing is uploaded.</p>
-      <div class="status" id="status">
-        <span class="chip" id="chip-mlp"><i></i>MLP · loading…</span>
-        <span class="chip" id="chip-tm"><i></i>Teachable Machine · loading…</span>
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow">🐾 A deep learning experiment · 10 animals</p>
+        <h1>Can a computer tell a <em>cat</em> from a <em>chicken</em>?</h1>
+        <p class="lead">I trained two models on the <b>same 7,000 animal photos</b>: a plain neural network (an MLP) that sees a picture as one long list of pixels, and a Teachable Machine model that borrows a pre-trained brain.
+          Same epochs, same batch size, same learning rate. Then I tested both on <b>1,500 photos they had never seen</b>.</p>
+        <div class="score">
+          <div class="score-card mlp">
+            <span class="score-num">28%</span>
+            <span class="score-name">MLP</span>
+            <span class="score-sub">the pixel counter</span>
+          </div>
+          <div class="score-vs">vs</div>
+          <div class="score-card tm">
+            <span class="score-num">93%</span>
+            <span class="score-name">Teachable Machine</span>
+            <span class="score-sub">the shape spotter</span>
+          </div>
+        </div>
+        <p class="hint-line">Both models run right here in your browser, so go ahead and try them ↓</p>
+        <div class="status" id="status">
+          <span class="chip" id="chip-mlp"><i></i>MLP · loading…</span>
+          <span class="chip" id="chip-tm"><i></i>Teachable Machine · loading…</span>
+        </div>
       </div>
+      <div class="collage" id="collage" aria-label="Photos from the test set with each model's guess"></div>
     </div>
   </header>
 
-  <nav class="tabs wrap" role="tablist" aria-label="Sections">
-    <button role="tab" class="tab active" data-tab="try" aria-selected="true">Try it</button>
-    <button role="tab" class="tab" data-tab="look" aria-selected="false">Where it looked</button>
-    <button role="tab" class="tab" data-tab="stress" aria-selected="false">Stress test</button>
-    <button role="tab" class="tab" data-tab="explore" aria-selected="false">Test explorer</button>
-    <button role="tab" class="tab" data-tab="results" aria-selected="false">Results</button>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <div class="wrap tabs-in">
+      <button role="tab" class="tab active" data-tab="try" aria-selected="true">Try it</button>
+      <button role="tab" class="tab" data-tab="look" aria-selected="false">Where it looked 👀</button>
+      <button role="tab" class="tab" data-tab="stress" aria-selected="false">Break it 🔨</button>
+      <button role="tab" class="tab" data-tab="explore" aria-selected="false">The 1,500 photos</button>
+      <button role="tab" class="tab" data-tab="results" aria-selected="false">Scoreboard</button>
+    </div>
   </nav>
 
   <main class="wrap">
@@ -36,17 +56,19 @@
     <section id="tab-try" class="panel active" role="tabpanel">
       <div class="try-grid">
         <div class="card input-card">
-          <h2>1 · Give it an image</h2>
+          <h2>Show them a photo</h2>
           <div class="drop" id="drop" tabindex="0" aria-label="Drop an image here, or click to choose one">
             <canvas id="preview" width="224" height="224"></canvas>
             <div class="drop-hint" id="dropHint">
-              <b>Drop an image</b> here<br><span>or click to choose, or paste (Ctrl+V)</span>
+              <span class="paw">🐾</span>
+              <b>Drop a photo here</b>
+              <span>or click to choose · or paste with Ctrl+V</span>
             </div>
           </div>
           <input type="file" id="file" accept="image/*" hidden>
           <div class="btn-row">
-            <button class="btn" id="btnChoose">Choose image</button>
-            <button class="btn" id="btnCam">Use webcam</button>
+            <button class="btn" id="btnChoose">Choose photo</button>
+            <button class="btn" id="btnCam">📷 Webcam</button>
           </div>
           <div id="camBox" class="cam" hidden>
             <video id="video" playsinline muted></video>
@@ -56,15 +78,15 @@
               <button class="btn ghost" id="btnCamOff">Stop</button>
             </div>
           </div>
-          <p class="source" id="source">No image yet. Pick a sample below.</p>
-          <h3>Sample test images <small>(first image of each class)</small></h3>
+          <p class="source" id="source">No photo yet. Tap one of the animals below.</p>
+          <h3>Or pick one <small>(first test photo of each animal)</small></h3>
           <div class="samples" id="samples"></div>
         </div>
 
         <div class="results-col">
-          <div class="verdict" id="verdict">Waiting for an image…</div>
+          <div class="verdict" id="verdict">Waiting for a photo…</div>
           <div class="model-cols" id="modelCols"></div>
-          <p class="fine">Images are centre-cropped to a square. The MLP sees them as 64 × 64 pixels, Teachable Machine as 224 × 224.</p>
+          <p class="fine">Photos are cropped to a square. The MLP gets a tiny 64 × 64 version, Teachable Machine gets 224 × 224.</p>
         </div>
       </div>
     </section>
@@ -73,13 +95,13 @@
     <section id="tab-look" class="panel" role="tabpanel" hidden>
       <div class="card">
         <h2>Where did each model look?</h2>
-        <p class="muted">A grey square slides across the image. Wherever covering the image makes a model <i>less</i> sure of its answer, that region mattered to it
-          (<b>occlusion sensitivity</b>). Red = the model relied on this region.</p>
+        <p class="muted">I slide a grey square over the photo. Wherever hiding the photo makes a model <i>less sure</i>, that spot mattered to it
+          (this is called <b>occlusion sensitivity</b>). The redder the spot, the more the model relied on it.</p>
         <div class="btn-row wrap-row">
-          <label>Class to explain
-            <select id="lookClass"><option value="own">Each model's own answer</option></select>
+          <label>Explain
+            <select id="lookClass"><option value="own">each model's own answer</option></select>
           </label>
-          <button class="btn primary" id="btnLook">Compute heatmaps</button>
+          <button class="btn primary" id="btnLook">Show me</button>
           <span class="muted" id="lookProgress"></span>
         </div>
         <div class="heat-grid" id="heatGrid"></div>
@@ -87,11 +109,11 @@
       </div>
     </section>
 
-    <!-- ============ STRESS TEST ============ -->
+    <!-- ============ BREAK IT ============ -->
     <section id="tab-stress" class="panel" role="tabpanel" hidden>
       <div class="stress-grid">
         <div class="card">
-          <h2>Stress the image</h2>
+          <h2>Make the photo worse</h2>
           <canvas id="stressCanvas" width="224" height="224"></canvas>
           <div class="sliders">
             <label>Noise <output id="o-noise">0</output>
@@ -108,46 +130,48 @@
         <div>
           <div class="model-cols" id="stressCols"></div>
           <div class="card sweep">
-            <h3>Which model breaks first?</h3>
+            <h3>Who gives up first?</h3>
             <div class="btn-row wrap-row">
-              <label>Change
+              <label>Spoil it with
                 <select id="sweepKind">
-                  <option value="noise">Noise</option>
-                  <option value="blur">Blur</option>
-                  <option value="bright">Dimming</option>
-                  <option value="rot">Rotation</option>
+                  <option value="noise">noise</option>
+                  <option value="blur">blur</option>
+                  <option value="bright">darkness</option>
+                  <option value="rot">rotation</option>
                 </select>
               </label>
-              <button class="btn primary" id="btnSweep">Run sweep</button>
+              <button class="btn primary" id="btnSweep">Run the test</button>
               <span class="muted" id="sweepInfo"></span>
             </div>
             <canvas id="sweepChart" width="720" height="320"></canvas>
+            <p class="fine">This is just one photo, so the lines can wiggle. Try the test on a few different photos.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ TEST EXPLORER ============ -->
+    <!-- ============ THE 1,500 PHOTOS ============ -->
     <section id="tab-explore" class="panel" role="tabpanel" hidden>
       <div class="card">
-        <h2>The 1,500 test images</h2>
-        <p class="muted">Neither model saw these during training. Click any image to analyse it in the other tabs.</p>
+        <h2>The 1,500 photos neither model had seen</h2>
+        <p class="muted">Tap any photo to open it in the other tabs. The frame colour shows who got it right.</p>
         <div class="filters">
           <div class="seg" id="catFilter"></div>
-          <label>Class <select id="classFilter"><option value="-1">All classes</option></select></label>
+          <label>Animal <select id="classFilter"><option value="-1">all animals</option></select></label>
         </div>
         <div class="grid" id="galleryGrid"></div>
         <div class="pager"><button class="btn ghost" id="pgPrev">← Prev</button><span id="pgInfo"></span><button class="btn ghost" id="pgNext">Next →</button></div>
       </div>
     </section>
 
-    <!-- ============ RESULTS ============ -->
+    <!-- ============ SCOREBOARD ============ -->
     <section id="tab-results" class="panel" role="tabpanel" hidden>
       <div class="card">
-        <h2>Results on the 1,500 held-out test images</h2>
+        <h2>The scoreboard</h2>
+        <p class="muted">Measured on the same 1,500 held-out photos.</p>
         <div class="big-nums">
-          <div><span class="num mlp-text">28.27%</span><span>MLP</span></div>
-          <div><span class="num tm-text">93.07%</span><span>Teachable Machine</span></div>
+          <div class="mlp"><span class="num">28.27%</span><span>MLP</span></div>
+          <div class="tm"><span class="num">93.07%</span><span>Teachable Machine</span></div>
         </div>
         <div class="table-wrap"><table class="tbl">
           <thead><tr><th></th><th>MLP</th><th>Teachable Machine</th></tr></thead>
@@ -155,29 +179,29 @@
             <tr><td>Test accuracy</td><td>28.27%</td><td>93.07%</td></tr>
             <tr><td>Macro F1</td><td>0.261</td><td>0.931</td></tr>
             <tr><td>Parameters</td><td id="par-mlp">1,581,898</td><td>539,308</td></tr>
-            <tr><td>Input</td><td>64 × 64 × 3 → 12,288 values</td><td>224 × 224 × 3</td></tr>
-            <tr><td>Architecture</td><td>Dense 128 → 64 → 10</td><td>Pre-trained CNN + classifier</td></tr>
+            <tr><td>Sees the photo as</td><td>64 × 64 × 3 = 12,288 numbers</td><td>224 × 224 × 3</td></tr>
+            <tr><td>Brain</td><td>Dense 128 → 64 → 10</td><td>Pre-trained CNN + small classifier</td></tr>
             <tr><td>Epochs · batch · learning rate</td><td colspan="2" class="center">15 · 32 · 0.0001 (identical for both)</td></tr>
-            <tr><td>Training time</td><td>≈ 1 min</td><td>≈ 4 min</td></tr>
+            <tr><td>Training time</td><td>about 1 minute</td><td>about 4 minutes</td></tr>
           </tbody>
         </table></div>
-        <h3>Per-class accuracy</h3>
+        <h3>Accuracy per animal</h3>
         <div id="perClass" class="per-class"></div>
-        <h3>Confusion matrices</h3>
+        <h3>Where each model got confused</h3>
         <div class="cm-row">
           <figure><img src="assets/mlp_confusion.png" alt="MLP confusion matrix" loading="lazy"><figcaption>MLP</figcaption></figure>
           <figure><img src="assets/tm_confusion.png" alt="Teachable Machine confusion matrix" loading="lazy"><figcaption>Teachable Machine</figcaption></figure>
         </div>
-        <h3>Why such a gap?</h3>
-        <p>An MLP flattens the picture into one long list of numbers, so it loses the idea of <i>shape</i>: ears, legs and wings look like scattered pixels. Teachable Machine starts from a convolutional network
-          that already learned edges, textures and object parts from millions of images and only learns to map them to these 10 animals (transfer learning).</p>
+        <h3>So why the huge gap?</h3>
+        <p>An MLP turns the photo into one long list of numbers, so it forgets which pixels are neighbours. To it, ears, legs and wings are just scattered dots, and it ends up guessing from colours and backgrounds.
+          Teachable Machine starts from a convolutional network that already learned edges, textures and object parts from millions of photos, and only has to learn which animal is which. That trick is called <b>transfer learning</b>.</p>
         <p class="muted" id="liveCheck"></p>
       </div>
     </section>
   </main>
 
   <footer class="wrap foot">
-    <p>Dataset: <a href="https://huggingface.co/datasets/Rapidata/Animals-10" target="_blank" rel="noopener">Animals-10</a> (cleaned version, Rapidata). Models trained by Alina Irshad. Runs fully client-side with TensorFlow.js.</p>
+    <p>Made by Alina Irshad for a Deep Learning course. Photos from the <a href="https://huggingface.co/datasets/Rapidata/Animals-10" target="_blank" rel="noopener">Animals-10</a> dataset (cleaned version by Rapidata). Runs on TensorFlow.js; nothing you add leaves your device.</p>
   </footer>
 
   <script src="vendor/tf.min.js"></script>

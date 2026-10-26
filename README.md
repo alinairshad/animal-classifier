@@ -36,6 +36,7 @@ Total size is about 30 MB, well under GitHub's limits.
 | `index.html`, `style.css`, `app.js` | The website |
 | `models/mlp/` | MLP weights (`mlp_weights.bin`) and layer description (`mlp_manifest.json`), exported from the Keras model |
 | `models/tm/` | Teachable Machine TensorFlow.js export (`model.json`, `metadata.json`, `weights.bin`) |
+| `fonts/` | Fraunces and Nunito (SIL Open Font License 1.1), self-hosted so the site works offline |
 | `vendor/` | TensorFlow.js 1.7.4 and the Teachable Machine image library 0.8.5 (bundled, so no CDN is needed) |
 | `gallery/` | The 1,500 held-out test images and `gallery.json` with both models' predictions on them |
 | `assets/` | Confusion-matrix figures for the Results tab |
