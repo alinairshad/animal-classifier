@@ -26,8 +26,8 @@ const state = {
   stream: null, liveTimer: null, liveBusy: false,
 };
 
-const EMOJI = { Butterfly: '🦋', Cat: '🐱', Chicken: '🐔', Cow: '🐮', Dog: '🐶', Elephant: '🐘', Horse: '🐴', Sheep: '🐑', Spider: '🕷️', Squirrel: '🐿️' };
-const lab = i => `${EMOJI[state.classes[i]] || ''} ${state.classes[i]}`.trim();
+const ico = name => `<img class="ico" src="icons/${String(name).toLowerCase()}.svg" alt="" width="24" height="24">`;
+const lab = i => `<span class="lab">${ico(state.classes[i])}${state.classes[i]}</span>`;
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const fmtPct = p => (p * 100 < 10 ? (p * 100).toFixed(1) : Math.round(p * 100)) + '%';
@@ -161,7 +161,7 @@ function renderVerdict(results, truth) {
   let extra = '';
   if (truth >= 0) extra = ` &nbsp;·&nbsp; it is a <b>${lab(truth)}</b>`;
   v.className = 'verdict ' + (agree ? 'agree' : 'differ');
-  v.innerHTML = (agree ? 'They agree! ' : 'Plot twist, they disagree. ') + names + extra;
+  v.innerHTML = (agree ? 'Both models agree. ' : 'The models disagree. ') + names + extra;
 }
 
 async function runTry() {
@@ -508,7 +508,7 @@ async function initExplorer() {
   { let seed = 12345; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     state.display = list.slice(); for (let i = state.display.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [state.display[i], state.display[j]] = [state.display[j], state.display[i]]; } }
   const sel = $('#classFilter');
-  state.classes.forEach((c, i) => sel.insertAdjacentHTML('beforeend', `<option value="${i}">${lab(i)}</option>`));
+  state.classes.forEach((c, i) => sel.insertAdjacentHTML('beforeend', `<option value="${i}">${c}</option>`));
   sel.addEventListener('change', () => { state.cls = +sel.value; state.page = 0; renderGallery(); });
   const seg = $('#catFilter');
   seg.innerHTML = CATS.map(c => `<button data-cat="${c.id}" class="${c.id === 'all' ? 'active' : ''}">${c.label} <span class="n"></span></button>`).join('');
@@ -559,7 +559,7 @@ function renderCollage() {
 
 function renderSamples() {
   const firsts = state.classes.map((_, i) => state.gallery.find(g => g.t === i)).filter(Boolean);
-  $('#samples').innerHTML = firsts.map((g, i) => `<button data-i="${i}" title="${state.classes[g.t]}"><img src="gallery/${g.f}" alt="${state.classes[g.t]}"><span class="em">${EMOJI[state.classes[g.t]] || ''}</span></button>`).join('');
+  $('#samples').innerHTML = firsts.map((g, i) => `<button data-i="${i}" title="${state.classes[g.t]}"><img src="gallery/${g.f}" alt="${state.classes[g.t]}"><span class="em">${ico(state.classes[g.t])}</span></button>`).join('');
   $('#samples').addEventListener('click', e => { const b = e.target.closest('button'); if (b) loadFromGallery(firsts[+b.dataset.i]); });
 }
 
@@ -568,7 +568,7 @@ function renderSamples() {
 function renderResults() {
   const rows = state.classes.map((c, i) => {
     const m = REPORT.perClassCorrect.mlp[i] / REPORT.perClassTotal, t = REPORT.perClassCorrect.tm[i] / REPORT.perClassTotal;
-    return `<div class="pc"><span>${EMOJI[c] || ''} ${c}</span><div class="pair">
+    return `<div class="pc"><span class="lab">${ico(c)}${c}</span><div class="pair">
       <div class="row"><span class="track"><span class="fill mlp" style="width:${m * 100}%"></span></span><span>${(m * 100).toFixed(1)}%</span></div>
       <div class="row"><span class="track"><span class="fill tm" style="width:${t * 100}%"></span></span><span>${(t * 100).toFixed(1)}%</span></div></div></div>`;
   }).join('');
@@ -611,7 +611,7 @@ async function boot() {
     setChip('#chip-tm', 'ok', `Teachable Machine ready · ${tm.info}`);
   } catch (e) { setChip('#chip-tm', 'err', 'Teachable Machine failed to load'); showBanner('Could not load Teachable Machine: ' + e.message); }
 
-  state.classes.forEach((c, i) => $('#lookClass').insertAdjacentHTML('beforeend', `<option value="${i}">${lab(i)}</option>`));
+  state.classes.forEach((c, i) => $('#lookClass').insertAdjacentHTML('beforeend', `<option value="${i}">${c}</option>`));
   buildCards($('#modelCols'), 'try'); buildCards($('#stressCols'), 'st');
   renderResults();
   await initExplorer();

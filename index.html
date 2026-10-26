@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cat or chicken? MLP vs Teachable Machine</title>
-  <meta name="description" content="I trained two models on the same 7,000 animal photos. One gets 28% right, the other 93%. Play with them, break them, and see where each one looks.">
+  <title>Animal Classifier: MLP vs Teachable Machine</title>
+  <meta name="description" content="Two image classifiers trained on the same 7,000 animal photos: a plain MLP (28%) and a Teachable Machine model (93%). Try them in your browser.">
   <link rel="preload" href="fonts/fraunces-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -12,10 +12,10 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div class="hero-text">
-        <p class="eyebrow">🐾 A deep learning experiment · 10 animals</p>
-        <h1>Can a computer tell a <em>cat</em> from a <em>chicken</em>?</h1>
-        <p class="lead">I trained two models on the <b>same 7,000 animal photos</b>: a plain neural network (an MLP) that sees a picture as one long list of pixels, and a Teachable Machine model that borrows a pre-trained brain.
-          Same epochs, same batch size, same learning rate. Then I tested both on <b>1,500 photos they had never seen</b>.</p>
+        <p class="eyebrow"><svg class="paw-ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="6.3" cy="10.2" rx="2" ry="2.6"/><ellipse cx="10.3" cy="5.8" rx="2" ry="2.8"/><ellipse cx="14.9" cy="5.8" rx="2" ry="2.8"/><ellipse cx="18.8" cy="10.2" rx="2" ry="2.6"/><path d="M12.6 11c-3 0-6 3.4-6 6.2 0 2 1.5 2.8 3 2.8 1 0 1.9-.5 3-.5s2 .5 3 .5c1.5 0 3-.8 3-2.8 0-2.8-3-6.2-6-6.2z"/></svg>Deep learning project · Animals-10</p>
+        <h1>Same photos,<br>same settings.<br><em>Very different results.</em></h1>
+        <p class="lead">For my Deep Learning course I trained two image classifiers on exactly the same 7,000 animal photos: a plain neural network (an MLP) and a model built with Teachable Machine.
+          Then I tested both on 1,500 photos neither had seen. Use this page to try them yourself, see where each one looks, and find out how easily they break.</p>
         <div class="score">
           <div class="score-card mlp">
             <span class="score-num">28%</span>
@@ -29,7 +29,7 @@
             <span class="score-sub">the shape spotter</span>
           </div>
         </div>
-        <p class="hint-line">Both models run right here in your browser, so go ahead and try them ↓</p>
+        <p class="hint-line">Both models run in your browser. Choose a photo below to see their answers.</p>
         <div class="status" id="status">
           <span class="chip" id="chip-mlp"><i></i>MLP · loading…</span>
           <span class="chip" id="chip-tm"><i></i>Teachable Machine · loading…</span>
@@ -42,8 +42,8 @@
   <nav class="tabs" role="tablist" aria-label="Sections">
     <div class="wrap tabs-in">
       <button role="tab" class="tab active" data-tab="try" aria-selected="true">Try it</button>
-      <button role="tab" class="tab" data-tab="look" aria-selected="false">Where it looked 👀</button>
-      <button role="tab" class="tab" data-tab="stress" aria-selected="false">Break it 🔨</button>
+      <button role="tab" class="tab" data-tab="look" aria-selected="false">Where it looked</button>
+      <button role="tab" class="tab" data-tab="stress" aria-selected="false">Break it</button>
       <button role="tab" class="tab" data-tab="explore" aria-selected="false">The 1,500 photos</button>
       <button role="tab" class="tab" data-tab="results" aria-selected="false">Scoreboard</button>
     </div>
@@ -56,11 +56,11 @@
     <section id="tab-try" class="panel active" role="tabpanel">
       <div class="try-grid">
         <div class="card input-card">
-          <h2>Show them a photo</h2>
+          <h2>Choose a photo</h2>
           <div class="drop" id="drop" tabindex="0" aria-label="Drop an image here, or click to choose one">
             <canvas id="preview" width="224" height="224"></canvas>
             <div class="drop-hint" id="dropHint">
-              <span class="paw">🐾</span>
+              <svg class="paw-big" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="6.3" cy="10.2" rx="2" ry="2.6"/><ellipse cx="10.3" cy="5.8" rx="2" ry="2.8"/><ellipse cx="14.9" cy="5.8" rx="2" ry="2.8"/><ellipse cx="18.8" cy="10.2" rx="2" ry="2.6"/><path d="M12.6 11c-3 0-6 3.4-6 6.2 0 2 1.5 2.8 3 2.8 1 0 1.9-.5 3-.5s2 .5 3 .5c1.5 0 3-.8 3-2.8 0-2.8-3-6.2-6-6.2z"/></svg>
               <b>Drop a photo here</b>
               <span>or click to choose · or paste with Ctrl+V</span>
             </div>
@@ -68,7 +68,7 @@
           <input type="file" id="file" accept="image/*" hidden>
           <div class="btn-row">
             <button class="btn" id="btnChoose">Choose photo</button>
-            <button class="btn" id="btnCam">📷 Webcam</button>
+            <button class="btn" id="btnCam">Webcam</button>
           </div>
           <div id="camBox" class="cam" hidden>
             <video id="video" playsinline muted></video>
@@ -101,7 +101,7 @@
           <label>Explain
             <select id="lookClass"><option value="own">each model's own answer</option></select>
           </label>
-          <button class="btn primary" id="btnLook">Show me</button>
+          <button class="btn primary" id="btnLook">Show heatmaps</button>
           <span class="muted" id="lookProgress"></span>
         </div>
         <div class="heat-grid" id="heatGrid"></div>
@@ -113,7 +113,7 @@
     <section id="tab-stress" class="panel" role="tabpanel" hidden>
       <div class="stress-grid">
         <div class="card">
-          <h2>Make the photo worse</h2>
+          <h2>Degrade the photo</h2>
           <canvas id="stressCanvas" width="224" height="224"></canvas>
           <div class="sliders">
             <label>Noise <output id="o-noise">0</output>
@@ -130,9 +130,9 @@
         <div>
           <div class="model-cols" id="stressCols"></div>
           <div class="card sweep">
-            <h3>Who gives up first?</h3>
+            <h3>Which model breaks first?</h3>
             <div class="btn-row wrap-row">
-              <label>Spoil it with
+              <label>Degrade with
                 <select id="sweepKind">
                   <option value="noise">noise</option>
                   <option value="blur">blur</option>
@@ -140,7 +140,7 @@
                   <option value="rot">rotation</option>
                 </select>
               </label>
-              <button class="btn primary" id="btnSweep">Run the test</button>
+              <button class="btn primary" id="btnSweep">Run test</button>
               <span class="muted" id="sweepInfo"></span>
             </div>
             <canvas id="sweepChart" width="720" height="320"></canvas>
@@ -201,7 +201,9 @@
   </main>
 
   <footer class="wrap foot">
-    <p>Made by Alina Irshad for a Deep Learning course. Photos from the <a href="https://huggingface.co/datasets/Rapidata/Animals-10" target="_blank" rel="noopener">Animals-10</a> dataset (cleaned version by Rapidata). Runs on TensorFlow.js; nothing you add leaves your device.</p>
+    <p>Built by Alina Irshad as a Deep Learning course project · <a href="https://github.com/alinairshad/animal-classifier" target="_blank" rel="noopener">View the code on GitHub</a></p>
+    <p>Photos: <a href="https://huggingface.co/datasets/Rapidata/Animals-10" target="_blank" rel="noopener">Animals-10</a>, cleaned version by Rapidata (GPL-2.0). Animal icons: Noto Emoji by Google (Apache-2.0).
+      Both models run locally in your browser with TensorFlow.js, and the photos you add are never uploaded.</p>
   </footer>
 
   <script src="vendor/tf.min.js"></script>
